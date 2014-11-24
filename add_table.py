@@ -51,22 +51,22 @@ cur_slave = conn_slave.cursor()
 
 def getLatestSetID():
 	## New set id
-	cur_master.execute("select max(set_id) + 1 as set_id from _myrep.sl_set")
+	cur_master.execute("select max(set_id) + 1 as set_id from _{CLUSTERNAME}.sl_set".format(CLUSTERNAME=CLUSTERNAME))
 	return cur_master.fetchone()
 
 def getLatestTableID():
 	## New table id
-	cur_master.execute("select max(tab_id) + 1 as tab_id from _myrep.sl_table")
+	cur_master.execute("select max(tab_id) + 1 as tab_id from _{CLUSTERNAME}.sl_table".format(CLUSTERNAME=CLUSTERNAME))
 	return cur_master.fetchone()
 
 def getLatestSequenceID():
 	## NEW SEQUENCE ID
-	cur_master.execute("select max(seq_id) + 1 as seq_id from _myrep.sl_sequence")
+	cur_master.execute("select max(seq_id) + 1 as seq_id from _{CLUSTERNAME}.sl_sequence".format(CLUSTERNAME=CLUSTERNAME))
 	return cur_master.fetchone()
 
 def getLatestSubscribeID():
 	## NEW SUBSCRIBE ID
-	cur_master.execute("select max(sub_set) + 1 as sub_set from _myrep.sl_subscribe")
+	cur_master.execute("select max(sub_set) + 1 as sub_set from _{CLUSTERNAME}.sl_subscribe".format(CLUSTERNAME=CLUSTERNAME))
 	return cur_master.fetchone()
 
 def getTableDiff(query):
@@ -85,8 +85,8 @@ def getSequenceDiff(query):
 
 def dumpSchema():
 	## Dump the schema of the new table
-	pg_dump = subprocess.Popen(('pg_dump', '-U', 'postgres', '-s', 'master', '-t', table[0]), stdout=subprocess.PIPE)
-	psql = subprocess.Popen(('psql', '-U', 'postgres', '-h', 'localhost', 'slave'), stdin=pg_dump.stdout, stdout=subprocess.PIPE)
+	pg_dump = subprocess.Popen(('pg_dump', '-U', 'postgres', '-s', MASTERDBNAME, '-t', table[0]), stdout=subprocess.PIPE)
+	psql = subprocess.Popen(('psql', '-U', 'postgres', '-h', SLAVEHOST, SLAVEDBNAME), stdin=pg_dump.stdout, stdout=subprocess.PIPE)
 	pg_dump.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
 	output = psql.communicate()[0]
 
@@ -109,7 +109,7 @@ def createAddTableFile():
 	node 1 admin conninfo = 'dbname={MASTERDBNAME} host={MASTERHOST} user={REPLICATIONUSER} password={REPLICATIONPASSWORD}';
 	node 2 admin conninfo = 'dbname={SLAVEDBNAME} host={SLAVEHOST} user={REPLICATIONUSER} password={REPLICATIONPASSWORD}';
 	create set (id={new_set_id}, origin=1, comment='a second replication set');
-	set add table (set id={new_set_id}, origin=1, id={new_tab_id}, fully qualified name = 'public.{new_table_name}', comment ='some new table');
+	set add table (set id={new_set_id}, origin=1, id={new_tab_id}, fully qualified name = '{SCHEMANAME}.{new_table_name}', comment ='some new table');
 	subscribe set(id={new_sub_id}, provider=1,receiver=2);
 	merge set(id=1, add id={new_sub_id},origin=1);
 	""".format(CLUSTERNAME=CLUSTERNAME, \
@@ -119,6 +119,7 @@ def createAddTableFile():
 		SLAVEHOST=SLAVEHOST, \
 		REPLICATIONUSER=REPLICATIONUSER, \
 		REPLICATIONPASSWORD=REPLICATIONPASSWORD, \
+		SCHEMANAME=SCHEMANAME, \
 		new_set_id=NEW_SET_ID[0] + i, \
 		new_tab_id=NEW_TAB_ID[0] + i, \
 		new_table_name=table[0], \
@@ -143,11 +144,11 @@ if __name__ == "__main__":
 	NEW_SEQ_ID = getLatestSequenceID()
 
 	## find the difference of the table
-	query = "select table_name from information_schema.tables where table_schema='public'"
+	query = "select table_name from information_schema.tables where table_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
 	not_replicated_table = getTableDiff(query)
 
 	## find the difference of the sequence
-	query = "select sequence_name from information_schema.sequences where sequence_schema='public'"
+	query = "select sequence_name from information_schema.sequences where sequence_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
 	not_replicated_sequence = getSequenceDiff(query)
 
 	## Add every new table to the set
