@@ -28,4 +28,20 @@ The `testing` folder contains the test I've done, using postgreSQL 9.3.5 and slo
 
 Slony config
 -------
-I also provide initial slony config in my `slony_config` folder. However this config will work only in SlonyI >= 2.1. To see a full documentation about how to install Slony please refer to [this document](http://slony.info/documentation/)
+I also provide initial slony config in my `slony_config` folder. However this config will work only in SlonyI >= 2.1. Please read the full documentation about how to install Slony in [this document](http://slony.info/documentation/).
+
+How to do initial config:
+
+```bash
+## In your master
+slonik slony_config/slonny_config
+
+## In your master
+slon myrep "dbname=master user=postgres password=postgres host=localhost" > /dev/null 2>&1
+
+## In your slave
+slon myrep "dbname=slave user=postgres password=postgres host=localhost" > /dev/null 2>&1
+
+## In your master 
+slonik slony_config/subscribe
+```
