@@ -22,6 +22,22 @@ This script will look for your `information_schema.tables` table in both your ma
 Normally, you just need to create the table in your master server only and run `python add_table.py`. It will detect your new table and add it to your slave, so you don't need to use `execute script` slony's command or create table in your slave manually.
 You can run this script by using `crontab` as well, so your table will be automatically copied to your slave. But if you use crontab, make sure your slony user does not require password to connect to your database.
 
+There are few configuration before you start to run this script. This configuration is inside `add_table.py`, you can open it using your favorite text editor.
+```python
+SLON_PATH = 'normally it is your postgresql bin folder'
+SLONIK_PATH = 'It is where your slonik located at'
+CLUSTERNAME = 'Your slony cluster name'
+MASTERDBNAME = 'Your master's database name'
+SLAVEDBNAME = 'Your slave's database name'
+MASTERHOST = 'Your master IP'
+SLAVEHOST = 'Your slave IP'
+REPLICATIONUSER = 'Your postgresql user for slony'
+REPLICATIONPASSWORD = 'Your postgresql password for slony'
+ADDTABLEFILENAME = 'You can leave this unchanged, this is for creating slony add table script'
+ADDSEQUENCEFILENAME =  'You can leave this unchanged, this is for creating slony add sequence script'
+
+```
+
 Test
 -------
 The `testing` folder contains the test I've done, using postgreSQL 9.3.5 and slonyI 2.3.3.
