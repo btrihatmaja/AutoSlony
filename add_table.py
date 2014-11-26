@@ -10,19 +10,24 @@ import numpy as np
 
 
 ## Change this based on your config
-SLON_PATH 		= '/usr/lib/postgresql/8.4/bin'
-SLONIK_PATH		= '/usr/lib/postgresql/8.4/bin/bin'
-CLUSTERNAME		= 'myrep'
-MASTERDBNAME	= 'rajdb'
-SLAVEDBNAME		= 'rajdb_slave'
-MASTERHOST 		= '10.10.12.3'
-SLAVEHOST 		= '10.10.12.4'
-REPLICATIONUSER = 'postgres'
-REPLICATIONPASSWORD = 'postgres'
-SCHEMANAME = 'public'
-ADDTABLEFILENAME = 'command_add_table'
-ADDSEQUENCEFILENAME = 'command_add_sequence'
+SLON_PATH 		= os.environ.get('SLON_PATH')
+SLONIK_PATH		= os.environ.get('SLONIK_PATH')
+CLUSTERNAME		= os.environ.get('CLUSTERNAME')
+MASTERDBNAME	= os.environ.get('MASTERDBNAME')
+SLAVEDBNAME		= os.environ.get('SLAVEDBNAME')
+MASTERHOST 		= os.environ.get('MASTERHOST')
+SLAVEHOST 		= os.environ.get('SLAVEHOST')
+REPLICATIONUSER = os.environ.get('REPLICATIONUSER')
+REPLICATIONPASSWORD = os.environ.get('REPLICATIONPASSWORD')
+SCHEMANAME = os.environ.get('SCHEMANAME')
+ADDTABLEFILENAME = os.environ.get('ADDTABLEFILENAME','command_add_table')
+ADDSEQUENCEFILENAME = os.environ.get('ADDSEQUENCEFILENAME','command_add_sequence')
 
+if (SLON_PATH or SLONIK_PATH or CLUSTERNAME or \
+ MASTERDBNAME or SLAVEDBNAME or MASTERHOST or \
+ SLAVEHOST  or REPLICATIONUSER or REPLICATIONPASSWORD or SCHEMANAME) is None :
+	print "Please set the environment variables first"
+	sys.exit()
 
 ## Database init
 try:
@@ -76,9 +81,9 @@ def getTableDiff(query):
 	slave_table = cur_slave.fetchall()
 	return set(master_table).symmetric_difference(set(slave_table))
 
-def getSequenceDiff(query):
+def getSequenceDiff(query, query_schema):
 	cur_master.execute(query)
-	cur_slave.execute(query)
+	cur_slave.execute(query_schema)
 	master_sequence = cur_master.fetchall()
 	slave_sequence = cur_slave.fetchall()
 	return set(master_sequence).symmetric_difference(set(slave_sequence))
@@ -90,6 +95,50 @@ def dumpSchema():
 	pg_dump.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
 	output = psql.communicate()[0]
 
+
+## Create new sequence command
+def createAddSequenceFile():
+	## Create slonik command file
+	COMMAND_TEMPLATE = """
+	
+	#--
+	# define the namespace the replication system uses in our example it is
+	# slony_example
+	#--
+
+	cluster name = {CLUSTERNAME};
+
+	#--
+	# admin conninfo's are used by slonik to connect to the nodes one for each
+	# node on each side of the cluster, the syntax is that of PQconnectdb in
+	# the C-API
+	# --
+	node 1 admin conninfo = 'dbname={MASTERDBNAME} host={MASTERHOST} user={REPLICATIONUSER} password={REPLICATIONPASSWORD}';
+	node 2 admin conninfo = 'dbname={SLAVEDBNAME} host={SLAVEHOST} user={REPLICATIONUSER} password={REPLICATIONPASSWORD}';
+	create set (id={new_set_id}, origin=1, comment='a second replication set');
+	set add sequence (set id={new_set_id}, origin=1, id={new_seq_id}, fully qualified name = '{SCHEMANAME}.{new_sequence_name}', comment ='some new sequence');
+	subscribe set(id={new_sub_id}, provider=1,receiver=2);
+	merge set(id=1, add id={new_sub_id},origin=1);
+	""".format(CLUSTERNAME=CLUSTERNAME, \
+		MASTERDBNAME=MASTERDBNAME, \
+		MASTERHOST=MASTERHOST, \
+		SLAVEDBNAME=SLAVEDBNAME, \
+		SLAVEHOST=SLAVEHOST, \
+		REPLICATIONUSER=REPLICATIONUSER, \
+		REPLICATIONPASSWORD=REPLICATIONPASSWORD, \
+		SCHEMANAME=SCHEMANAME, \
+		new_set_id=NEW_SET_ID[0] + i, \
+		new_seq_id=NEW_SEQ_ID[0] + i, \
+		new_sequence_name=sequence[0], \
+		new_sub_id= NEW_SUB_ID[0] + i)
+	print COMMAND_TEMPLATE
+	## Create file of the command table 
+	f = open(ADDSEQUENCEFILENAME,'w')
+	f.write(COMMAND_TEMPLATE)
+	f.close()
+
+
+## Create new table command
 def createAddTableFile():
 	## Create slonik command file
 	COMMAND_TEMPLATE = """
@@ -147,9 +196,6 @@ if __name__ == "__main__":
 	query = "select table_name from information_schema.tables where table_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
 	not_replicated_table = getTableDiff(query)
 
-	## find the difference of the sequence
-	query = "select sequence_name from information_schema.sequences where sequence_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
-	not_replicated_sequence = getSequenceDiff(query)
 
 	## Add every new table to the set
 	i = 0
@@ -157,6 +203,25 @@ if __name__ == "__main__":
 		dumpSchema()
 		createAddTableFile()
 		callSlonik(ADDTABLEFILENAME)
+		i += 1
+
+	## Get new ID again
+	NEW_SET_ID = getLatestSetID()
+	NEW_TAB_ID = getLatestTableID()
+	NEW_SUB_ID = getLatestSubscribeID()
+	NEW_SEQ_ID = getLatestSequenceID()
+
+	## find the difference of the sequence
+	query = "select sequence_name from information_schema.sequences where sequence_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
+	query_schema = "select seq_relname from _myrep.sl_sequence where seq_nspname='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
+	not_replicated_sequence = getSequenceDiff(query, query_schema)
+	print not_replicated_sequence
+
+	## Add every new sequence to the set
+	i = 0
+	for sequence in not_replicated_sequence:
+		createAddSequenceFile()
+		callSlonik(ADDSEQUENCEFILENAME)
 		i += 1
 
 

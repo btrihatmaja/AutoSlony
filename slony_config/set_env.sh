@@ -1,0 +1,10 @@
+SLON_PATH=/Library/PostgreSQL/9.3/bin/ 
+SLONIK_PATH=/Library/PostgreSQL/9.3/bin/bin
+CLUSTERNAME=myrep
+MASTERDBNAME=master
+SLAVEDBNAME=slave
+MASTERHOST=localhost
+SLAVEHOST=localhost
+REPLICATIONUSER=postgres
+REPLICATIONPASSWORD=postgres 
+SCHEMANAME=public

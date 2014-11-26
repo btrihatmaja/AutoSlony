@@ -12,10 +12,10 @@
 	# node on each side of the cluster, the syntax is that of PQconnectdb in
 	# the C-API
 	# --
-	node 1 admin conninfo = 'dbname=rajdb host=10.10.12.3 user=postgres password=postgres';
-	node 2 admin conninfo = 'dbname=rajdb_slave host=10.10.12.4 user=postgres password=postgres';
+	node 1 admin conninfo = 'dbname=master host=localhost user=postgres password=postgres';
+	node 2 admin conninfo = 'dbname=slave host=localhost user=postgres password=postgres';
 	create set (id=2, origin=1, comment='a second replication set');
-	set add table (set id=2, origin=1, id=2, fully qualified name = 'public.reptable2', comment ='some new table');
+	set add sequence (set id=2, origin=1, id=3, fully qualified name = 'public.reptable3_id_seq', comment ='some new sequence');
 	subscribe set(id=2, provider=1,receiver=2);
 	merge set(id=1, add id=2,origin=1);
 	
