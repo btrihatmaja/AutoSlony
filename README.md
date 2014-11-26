@@ -30,7 +30,7 @@ This script will look for your `information_schema.tables` table in both your ma
 Normally, you just need to create the table in your master server only and run `python add_table.py`. It will detect your new table and add it to your slave, so you don't need to use `execute script` slony's command or create table in your slave manually.
 You can run this script by using `crontab` as well, so your table will be automatically copied to your slave. But if you use crontab, make sure your slony user does not require password to connect to your database.
 
-There are few configuration before you start to run this script. This configuration is inside `slony_config/set_env.sh`, you can open it using your favorite text editor.
+There are few configuration before you start to run this script. This configuration is inside `slony_config/set_env`, you can open it using your favorite text editor.
 
 Example:
 
@@ -52,7 +52,7 @@ ADDSEQUENCEFILENAME =add_sequence_file
 And run:
 
 ```bash
-cat /slony_config/set_env.sh >> .bash_profile
+cat /slony_config/set_env >> .bash_profile
 source ~/.bash_profile
 ```
 
