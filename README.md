@@ -3,7 +3,7 @@ AutoSlony
 
 Automatically detect your new table and add it to your Slony set!
 
-Note: For now, this script only support for table adding and one master to one slave replication.
+Note: For now, this script only support for table and sequence adding and one master to one slave replication.
 
 Why?
 ---------
