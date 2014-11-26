@@ -52,7 +52,7 @@ ADDSEQUENCEFILENAME =add_sequence_file
 And run:
 
 ```bash
-cat /slony_config/set_env >> .bash_profile
+cat /slony_config/set_env >> ~/.bash_profile
 source ~/.bash_profile
 ```
 
@@ -71,7 +71,7 @@ Slony config
 -------
 I also provide initial slony config in my `slony_config` folder. However this config will work only in SlonyI >= 2.1. Please read the full documentation about how to install Slony in [this document](http://slony.info/documentation/).
 
-How to do initial config (_Remember to set your environtment variable first using set_env.sh_):
+How to do initial config (_Remember to set your environtment variable first using set_env_):
 
 ```bash
 ## In your master
