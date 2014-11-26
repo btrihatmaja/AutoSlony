@@ -10,13 +10,13 @@ import numpy as np
 
 
 ## Change this based on your config
-SLON_PATH 		= '/Library/PostgreSQL/9.3/bin'
-SLONIK_PATH		= '/Library/PostgreSQL/9.3/bin/bin/slonik'
+SLON_PATH 		= '/usr/lib/postgresql/8.4/bin'
+SLONIK_PATH		= '/usr/lib/postgresql/8.4/bin/bin'
 CLUSTERNAME		= 'myrep'
-MASTERDBNAME	= 'master'
-SLAVEDBNAME		= 'slave'
-MASTERHOST 		= 'localhost'
-SLAVEHOST 		= 'localhost'
+MASTERDBNAME	= 'rajdb'
+SLAVEDBNAME		= 'rajdb_slave'
+MASTERHOST 		= '10.10.12.3'
+SLAVEHOST 		= '10.10.12.4'
 REPLICATIONUSER = 'postgres'
 REPLICATIONPASSWORD = 'postgres'
 SCHEMANAME = 'public'

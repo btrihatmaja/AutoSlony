@@ -9,8 +9,8 @@ cluster name = myrep;
 # that connect from the administrators workstation (where
 # slonik is executed).
 # ----
-node 1 admin conninfo = 'dbname=master host=localhost user=postgres password=postgres';
-node 2 admin conninfo = 'dbname=slave host=localhost user=postgres password=postgres';
+node 1 admin conninfo = 'dbname=rajdb host=10.10.12.3 user=postgres password=postgres';
+node 2 admin conninfo = 'dbname=rajdb_slave host=10.10.12.4 user=postgres password=postgres';
 # ----
 # Node 2 subscribes set 1
 # ----

@@ -11,8 +11,8 @@ cluster name = myrep;
 # the C-API
 # --
 
-node 1 admin conninfo = 'dbname=master host=localhost user=postgres password=postgres';
-node 2 admin conninfo = 'dbname=slave host=localhost user=postgres password=postgres';
+node 1 admin conninfo = 'dbname=rajdb host=10.10.12.3 user=postgres password=postgres';
+node 2 admin conninfo = 'dbname=rajdb_slave host=10.10.12.4 user=postgres password=postgres';
 
 #--
 # init the first node.  Its id MUST be 1.  This creates the schema
@@ -38,5 +38,5 @@ set add table (set id=1, tables = 'public.*', comment='accounts table');
 #--
 
 store node (id=2, comment = 'Slave node', event node=1);
-store path (server = 1, client = 2, conninfo='dbname=master host=localhost user=postgres password=postgres');
-store path (server = 2, client = 1, conninfo='dbname=slave host=localhost user=postgres password=postgres');
+store path (server = 1, client = 2, conninfo='dbname=rajdb host=10.10.12.3 user=postgres password=postgres');
+store path (server = 2, client = 1, conninfo='dbname=rajdb_slave host=10.10.12.4 user=postgres password=postgres');

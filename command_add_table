@@ -1,0 +1,21 @@
+
+	
+	#--
+	# define the namespace the replication system uses in our example it is
+	# slony_example
+	#--
+
+	cluster name = myrep;
+
+	#--
+	# admin conninfo's are used by slonik to connect to the nodes one for each
+	# node on each side of the cluster, the syntax is that of PQconnectdb in
+	# the C-API
+	# --
+	node 1 admin conninfo = 'dbname=rajdb host=10.10.12.3 user=postgres password=postgres';
+	node 2 admin conninfo = 'dbname=rajdb_slave host=10.10.12.4 user=postgres password=postgres';
+	create set (id=2, origin=1, comment='a second replication set');
+	set add table (set id=2, origin=1, id=2, fully qualified name = 'public.reptable2', comment ='some new table');
+	subscribe set(id=2, provider=1,receiver=2);
+	merge set(id=1, add id=2,origin=1);
+	
