@@ -46,7 +46,7 @@ REPLICATIONUSER=postgres
 REPLICATIONPASSWORD=postgres 
 SCHEMANAME=public
 ADDTABLEFILENAME=add_table_file
-ADDSEQUENCEFILENAME =add_sequence_file
+ADDSEQUENCEFILENAME=add_sequence_file
 ```
 
 And run:
@@ -60,7 +60,7 @@ To run the script
 
 ```bash
 #After adding the table to your master
-python add_table.sh
+python add_table.py
 ```
 
 Test
