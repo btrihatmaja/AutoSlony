@@ -53,7 +53,7 @@ And run:
 
 ```bash
 cat /slony_config/set_env.sh >> .bash_profile
-source .bash_profile
+source ~/.bash_profile
 ```
 
 To run the script
