@@ -278,3 +278,9 @@ if __name__ == "__main__":
 	print "Exiting ..."
 
 
+	cur_master.close()
+	cur_slave.close()
+	conn_master.close()
+	conn_slave.close()
+
+
