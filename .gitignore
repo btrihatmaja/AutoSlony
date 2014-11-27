@@ -1,4 +1,4 @@
 *~
 *.lock
-*.DS_STOR
+*.DS_STORE
 slony_config/set_env
