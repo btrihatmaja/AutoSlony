@@ -1,4 +1,5 @@
 *~
+*.pid
 *.lock
 *.DS_STORE
 slony_config/set_env

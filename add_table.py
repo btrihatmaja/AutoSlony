@@ -32,6 +32,19 @@ if (SLON_PATH or SLONIK_PATH or CLUSTERNAME or \
 	print "Please set the environment variables first"
 	sys.exit()
 
+if os.path.exists("add_table.pid"):
+	print "This script is already running. If it is not running try to remove add_table.pid and run it again."
+	sys.exit()
+else:
+	try:
+		f = open("add_table.pid",'w')
+		f.write(str(os.getpid()))
+		f.close()
+	except Exception, e:
+		raise e
+		os.remove("add_table.pid")
+	
+
 ## Database init
 try:
 	conn_master = psycopg2.connect("dbname='{MASTERDBNAME}' user='{REPLICATIONUSER}' host='{MASTERHOST}' password='{REPLICATIONPASSWORD}'".format( \
@@ -282,5 +295,6 @@ if __name__ == "__main__":
 	cur_slave.close()
 	conn_master.close()
 	conn_slave.close()
+	os.remove("add_table.pid")
 
 
