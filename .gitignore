@@ -1,0 +1,4 @@
+*~
+*.lock
+*.DS_STOR
+slony_config/set_env

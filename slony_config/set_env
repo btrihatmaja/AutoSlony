@@ -1,10 +1,10 @@
-export SLON_PATH=/usr/lib/postgresql/8.4/bin/ 
-export SLONIK_PATH=/usr/lib/postgresql/8.4/bin/bin
+export SLON_PATH=/Library/PostgreSQL/9.3/bin/ 
+export SLONIK_PATH=/Library/PostgreSQL/9.3/bin/bin
 export CLUSTERNAME=myrep
-export MASTERDBNAME=rajdb
-export SLAVEDBNAME=rajdb_slave
-export MASTERHOST=10.10.12.3
-export SLAVEHOST=10.10.12.4
+export MASTERDBNAME=master
+export SLAVEDBNAME=slave
+export MASTERHOST=localhost
+export SLAVEHOST=localhost
 export REPLICATIONUSER=postgres
 export REPLICATIONPASSWORD=postgres 
 export SCHEMANAME=public

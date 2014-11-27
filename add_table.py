@@ -1,11 +1,14 @@
 # This script helps you to detect your new table and add it to your slony setting
 # You can use this script as cronjob, however this script is need to be tested more
 # Author: bagus.trihatmaja@gmail.com
+# Version 2.1
 
 import psycopg2
 import subprocess
 import sys
 import os
+import threading
+import time
 import numpy as np
 
 
@@ -48,6 +51,28 @@ except Exception, e:
 cur_master = conn_master.cursor()
 cur_slave = conn_slave.cursor()
 
+## Threading arrays
+threadsTable = []
+threadsSequence = []
+
+class TableThread(threading.Thread):
+	def __init__(self, counter, table):
+		threading.Thread.__init__(self)
+		self.table = table
+		self.counter = counter
+	def run(self):
+		doProcessForTable(self.counter, self.table)
+		
+
+class SequenceThread(threading.Thread):
+	def __init__(self, counter, sequence):
+		threading.Thread.__init__(self)
+		self.sequence = sequence
+		self.counter = counter
+	def run(self):
+		doProcessForSequence(self.counter, self.sequence)
+	
+
 ## ALL FUNCTIONS BELOW:
 
 ## Each ID in slony is unique. There are many ID in slony schema, but for now we only need
@@ -88,16 +113,15 @@ def getSequenceDiff(query, query_schema):
 	slave_sequence = cur_slave.fetchall()
 	return set(master_sequence).symmetric_difference(set(slave_sequence))
 
-def dumpSchema():
+def dumpSchema(table):
 	## Dump the schema of the new table
 	pg_dump = subprocess.Popen(('pg_dump', '-U', 'postgres', '-s', MASTERDBNAME, '-t', table[0]), stdout=subprocess.PIPE)
 	psql = subprocess.Popen(('psql', '-U', 'postgres', '-h', SLAVEHOST, SLAVEDBNAME), stdin=pg_dump.stdout, stdout=subprocess.PIPE)
 	pg_dump.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
 	output = psql.communicate()[0]
 
-
 ## Create new sequence command
-def createAddSequenceFile():
+def createAddSequenceFile(i, sequence):
 	## Create slonik command file
 	COMMAND_TEMPLATE = """
 	
@@ -131,15 +155,13 @@ def createAddSequenceFile():
 		new_seq_id=NEW_SEQ_ID[0] + i, \
 		new_sequence_name=sequence[0], \
 		new_sub_id= NEW_SUB_ID[0] + i)
-	print COMMAND_TEMPLATE
 	## Create file of the command table 
-	f = open(ADDSEQUENCEFILENAME,'w')
+	f = open(ADDSEQUENCEFILENAME + str(i),'w')
 	f.write(COMMAND_TEMPLATE)
 	f.close()
 
-
 ## Create new table command
-def createAddTableFile():
+def createAddTableFile(i, table):
 	## Create slonik command file
 	COMMAND_TEMPLATE = """
 	
@@ -173,9 +195,8 @@ def createAddTableFile():
 		new_tab_id=NEW_TAB_ID[0] + i, \
 		new_table_name=table[0], \
 		new_sub_id= NEW_SUB_ID[0] + i)
-	print COMMAND_TEMPLATE
 	## Create file of the command table 
-	f = open(ADDTABLEFILENAME,'w')
+	f = open(ADDTABLEFILENAME + str(i),'w')
 	f.write(COMMAND_TEMPLATE)
 	f.close()
 
@@ -184,6 +205,18 @@ def callSlonik(file_name):
 	slonik = ['slonik', file_name]
 	subprocess.call(slonik)
 
+def doProcessForTable(i, table):
+	print "Execute {table}\n".format(table=table[0])
+	dumpSchema(table)
+	createAddTableFile(i, table)
+	callSlonik(ADDTABLEFILENAME + str(i))
+	os.remove(ADDTABLEFILENAME + str(i))
+
+def doProcessForSequence(i, sequence):
+	print "Execute {sequence}\n".format(sequence=sequence[0])
+	createAddSequenceFile(i, sequence)
+	callSlonik(ADDSEQUENCEFILENAME + str(i))
+	os.remove(ADDSEQUENCEFILENAME + str(i))
 
 if __name__ == "__main__":
 	## Get the latest ID needed
@@ -200,10 +233,19 @@ if __name__ == "__main__":
 	## Add every new table to the set
 	i = 0
 	for table in not_replicated_table:
-		dumpSchema()
-		createAddTableFile()
-		callSlonik(ADDTABLEFILENAME)
+		threadTable = TableThread(i, table)
+		threadTable.start()
+		threadsTable.append(threadTable)
+		## Adding so many tables at once leads to "too many clients already"
+		## If this condition happens, subscription process will be stuck
+		## So I will limit the threads to 10 threads and sleep for 10 secs
+		## It will be faster and give a cooling down for the threads to complete
+		if i % 10 == 0:
+			time.sleep(10)
 		i += 1
+
+	for t in threadsTable:
+		t.join()
 
 	## Get new ID again
 	NEW_SET_ID = getLatestSetID()
@@ -211,17 +253,28 @@ if __name__ == "__main__":
 	NEW_SUB_ID = getLatestSubscribeID()
 	NEW_SEQ_ID = getLatestSequenceID()
 
-	## find the difference of the sequence
+	# ## find the difference of the sequence
 	query = "select sequence_name from information_schema.sequences where sequence_schema='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
 	query_schema = "select seq_relname from _myrep.sl_sequence where seq_nspname='{SCHEMANAME}'".format(SCHEMANAME=SCHEMANAME)
 	not_replicated_sequence = getSequenceDiff(query, query_schema)
-	print not_replicated_sequence
 
 	## Add every new sequence to the set
 	i = 0
 	for sequence in not_replicated_sequence:
-		createAddSequenceFile()
-		callSlonik(ADDSEQUENCEFILENAME)
+		threadSequence = SequenceThread(i, sequence)
+		threadSequence.start()
+		threadsSequence.append(threadSequence)
+		## Adding so many tables at once leads to "too many clients already"
+		## If this condition happens, subscription process will be stuck
+		## So I will limit the threads to 10 threads and sleep for 10 secs
+		## It will be faster and give a cooling down for the threads to complete
+		if i % 10 == 0:
+			time.sleep(10)
 		i += 1
+
+	for t in threadsSequence:
+		t.join()
+
+	print "Exiting ..."
 
 

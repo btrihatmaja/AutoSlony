@@ -14,8 +14,8 @@
 	# --
 	node 1 admin conninfo = 'dbname=master host=localhost user=postgres password=postgres';
 	node 2 admin conninfo = 'dbname=slave host=localhost user=postgres password=postgres';
-	create set (id=2, origin=1, comment='a second replication set');
-	set add sequence (set id=2, origin=1, id=3, fully qualified name = 'public.reptable3_id_seq', comment ='some new sequence');
-	subscribe set(id=2, provider=1,receiver=2);
-	merge set(id=1, add id=2,origin=1);
-	
+	create set (id=7, origin=1, comment='a second replication set');
+	set add sequence (set id=7, origin=1, id=9, fully qualified name = 'public.reptable6_id_seq', comment ='some new sequence');
+	subscribe set(id=7, provider=1,receiver=2);
+	merge set(id=1, add id=7,origin=1);
+		

@@ -11,13 +11,11 @@ if __name__ == "__main__":
 	  sys.exit()
 
 	cur = conn.cursor()
-	for x in xrange(1,10):
+	for x in xrange(1,1000):
 		print x
-		cur.execute("INSERT INTO reptable5 VALUES(%s)", (x,))
-		#cur.execute("SELECT * FROM reptable5")
-		#cur.fetchone()
+		cur.execute("INSERT INTO reptable166 (name) VALUES(%s)", ("test" + str(x),))
+		conn.commit()
 		time.sleep(1)
 
-	conn.commit()
 	cur.close()
 	conn.close()
